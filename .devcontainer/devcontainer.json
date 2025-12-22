@@ -1,0 +1,20 @@
+{
+  "name": "r1dev",
+  "dockerFile": "Dockerfile",
+
+  "workspaceMount": "source=${localWorkspaceFolder},target=/data_gen,type=bind",
+  "workspaceFolder": "/data_gen",
+
+  "build": {
+    // here you can specify which Dockerfile to use for the dev container
+    "dockerfile": "Dockerfile.ubuntu-py313-root",
+    "context": "../"
+  },
+  // "remoteUser": "vscode",
+  "runArgs": [
+    "--hostname", "r1dev-template",
+    // make sure to change this name for each new container
+    "--name", "r1dev-template"
+],
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}

@@ -262,9 +262,8 @@ async function callInference(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  const apiKey = config.apiKey || process.env.DATAGEN_INFERENCE_API_KEY;
-  if (apiKey) {
-    headers.Authorization = `Bearer ${apiKey}`;
+  if (config.apiKey) {
+    headers.Authorization = `Bearer ${config.apiKey}`;
   }
 
   const requestBody: Record<string, unknown> = { messages };

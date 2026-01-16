@@ -89,6 +89,13 @@ a {
   letter-spacing: 0.02em;
 }
 
+.brand__version {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 .page {
   display: flex;
   align-items: flex-start;
@@ -166,7 +173,8 @@ a {
   font-weight: 600;
 }
 
-.field input {
+.field input,
+.field select {
   padding: 12px 14px;
   border-radius: 12px;
   border: 1.5px solid var(--panel-border);
@@ -176,7 +184,8 @@ a {
   transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(27, 71, 247, 0.12);

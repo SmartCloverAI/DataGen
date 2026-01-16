@@ -63,38 +63,131 @@ class MockCStore {
 
 export const mockCStore = new MockCStore();
 
-export type MockUser = {
+type MockUser = {
   username: string;
   password: string;
-  role: string;
+  role: "admin" | "user";
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
 };
 
-const mockUsers: MockUser[] = [
-  { username: "admin", password: "admin", role: "admin" },
-  { username: "test_user", password: "testtest", role: "user" },
-];
+const mockUsers = new Map<string, MockUser>([
+  [
+    "admin",
+    {
+      username: "admin",
+      password: "admin",
+      role: "admin",
+      metadata: {},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ],
+  [
+    "test_user",
+    {
+      username: "test_user",
+      password: "testtest",
+      role: "user",
+      metadata: {},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ],
+]);
+
+function toPublic(user: MockUser) {
+  return {
+    username: user.username,
+    role: user.role,
+    metadata: { ...user.metadata },
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    type: "simple",
+  };
+}
 
 class MockAuth {
   simple = {
     init: async () => {},
     authenticate: async (username: string, password: string) => {
-      const user = mockUsers.find(
-        (u) => u.username === username && u.password === password,
-      );
-      if (!user) {
+      const key = username.trim().toLowerCase();
+      const user = mockUsers.get(key);
+      if (!user || user.password !== password) {
         const err = new Error("Invalid credentials");
-        // mimic cstore-auth-ts error shape loosely
         (err as any).code = "INVALID_CREDENTIALS";
+        err.name = "InvalidCredentialsError";
         throw err;
       }
-      return {
-        username: user.username,
-        role: user.role,
-        metadata: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        type: "simple",
+      return toPublic(user);
+    },
+    createUser: async (
+      username: string,
+      password: string,
+      opts?: { role?: "admin" | "user"; metadata?: Record<string, unknown> },
+    ) => {
+      const key = username.trim().toLowerCase();
+      if (mockUsers.has(key)) {
+        const err = new Error("User exists");
+        (err as any).code = "USER_EXISTS";
+        err.name = "UserExistsError";
+        throw err;
+      }
+      const now = new Date().toISOString();
+      const record: MockUser = {
+        username: key,
+        password,
+        role: opts?.role === "admin" ? "admin" : "user",
+        metadata: opts?.metadata ?? {},
+        createdAt: now,
+        updatedAt: now,
       };
+      mockUsers.set(key, record);
+      return toPublic(record);
+    },
+    getUser: async (username: string) => {
+      const user = mockUsers.get(username.trim().toLowerCase());
+      return user ? toPublic(user) : null;
+    },
+    getAllUsers: async () => Array.from(mockUsers.values()).map(toPublic),
+    updateUser: async (
+      username: string,
+      opts: { role?: "admin" | "user"; metadata?: Record<string, unknown> },
+    ) => {
+      const key = username.trim().toLowerCase();
+      const existing = mockUsers.get(key);
+      if (!existing) {
+        const err = new Error("User not found");
+        (err as any).code = "USER_NOT_FOUND";
+        err.name = "UserNotFoundError";
+        throw err;
+      }
+      const updated: MockUser = {
+        ...existing,
+        role: opts.role ?? existing.role,
+        metadata: opts.metadata ?? existing.metadata,
+        updatedAt: new Date().toISOString(),
+      };
+      mockUsers.set(key, updated);
+      return toPublic(updated);
+    },
+    changePassword: async (
+      username: string,
+      currentPassword: string,
+      newPassword: string,
+    ) => {
+      const key = username.trim().toLowerCase();
+      const existing = mockUsers.get(key);
+      if (!existing || existing.password !== currentPassword) {
+        const err = new Error("Invalid credentials");
+        (err as any).code = "INVALID_CREDENTIALS";
+        err.name = "InvalidCredentialsError";
+        throw err;
+      }
+      existing.password = newPassword;
+      existing.updatedAt = new Date().toISOString();
+      mockUsers.set(key, existing);
     },
   };
 }

@@ -24,7 +24,6 @@ npm run dev
 - `DATAGEN_SESSION_SECRET` — Secret used to sign session cookies/JWTs.
 - `DATAGEN_APP_HOST` / `DATAGEN_APP_PORT` — Public app host/port (fallback: `DATAGEN_APP_URL`, for future redirects/cookie scoping).
 - `DATAGEN_INFERENCE_HOST` / `DATAGEN_INFERENCE_PORT` — Base inference gateway host/port (fallback: `DATAGEN_INFERENCE_BASE_URL`).
-- `DATAGEN_INFERENCE_API_KEY` — Optional key for the inference gateway.
 - `LOG_INFERENCE_REQUESTS` — When `true`, logs the outgoing inference request (Authorization header is redacted).
 - `RETRY_INFERENCE_ON_FAILURE` — When `true`, reattempts one extra inference call on failure/parse errors.
 - `NEXT_PUBLIC_SHOW_FAILURES` — When `true`, shows the failure count on the task cards in the UI.

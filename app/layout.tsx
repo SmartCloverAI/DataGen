@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { Mona_Sans, Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import { getAppVersion } from "@/lib/version";
 
 const monaSans = Mona_Sans({
   variable: "--font-mona-sans",
@@ -18,11 +19,13 @@ export const metadata: Metadata = {
   description: "Generate synthetic datasets with one-call-per-record inference.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const version = await getAppVersion();
+
   return (
     <html lang="en">
       <body className={`${monaSans.variable} ${robotoMono.variable}`}>
@@ -39,6 +42,7 @@ export default function RootLayout({
               />
               <div className="brand__copy">
                 <p className="brand__tagline">Synthetic dataset generator</p>
+                <p className="brand__version">Version {version}</p>
               </div>
             </div>
             <div className="pill">CStore-secured workspace</div>

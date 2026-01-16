@@ -86,7 +86,6 @@ These come from the container environment in production, but for local dev you m
 
 ### Inference API
 - `DATAGEN_INFERENCE_HOST` + `DATAGEN_INFERENCE_PORT`
-- `DATAGEN_INFERENCE_API_KEY` (if needed by your inference gateway)
 
 ---
 

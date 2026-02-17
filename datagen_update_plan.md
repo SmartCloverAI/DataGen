@@ -57,7 +57,7 @@ Keep the existing vars in AGENTS.md fileciteturn1file2 and add:
 > Reason: A DataGen “instance” needs a stable identity to know which slice it owns.
 
 ### 2.2 Worker behavior
-- `DATAGEN_JOB_POLL_SECONDS` *(default: 2)* — how often to poll CStore for new work
+- `DATAGEN_JOB_POLL_SECONDS` *(default: 5)* — how often to poll CStore for new work
 - `DATAGEN_UPDATE_EVERY_K_REQUESTS` *(default: 5)* — update CStore progress every K inferences
 - `DATAGEN_MAX_CONCURRENT_JOBS_PER_INSTANCE` *(default: 1)* — keep at 1 for now (spec), but allow future lift.
 

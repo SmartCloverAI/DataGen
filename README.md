@@ -53,15 +53,22 @@ npm run dev
 - `DATAGEN_SESSION_SECRET`: Secret used to sign session cookies/JWTs.
 - `DATAGEN_APP_HOST` / `DATAGEN_APP_PORT`: Public app host/port (fallback: `DATAGEN_APP_URL`).
 - `DATAGEN_INFERENCE_HOST` / `DATAGEN_INFERENCE_PORT`: Inference gateway host/port (fallback: `DATAGEN_INFERENCE_BASE_URL`).
+- `R1EN_CHAINSTORE_PEERS`: Peer list for multi-instance execution (comma-separated or JSON array string).
+- `R1EN_HOST_ADDR`: Current instance peer id (must match one entry in `R1EN_CHAINSTORE_PEERS`).
 - `LOG_INFERENCE_REQUESTS`: When `true`, logs outgoing inference requests (auth header redacted).
 - `DATAGEN_LOG_R1FS_CALLS`: When `true`, logs R1FS upload/download start/success/error events.
 - `RETRY_INFERENCE_ON_FAILURE`: When `true`, retries one extra inference call on failure/parse errors.
 - `NEXT_PUBLIC_SHOW_FAILURES`: When `true`, shows failure counts in UI task cards.
 - `DATAGEN_MAX_RECORDS_PER_JOB`: Max records per job (default `200`).
+- `DATAGEN_MAX_EXTERNAL_API_CONFIGS`: Max saved external API profiles per user (default `10`).
 - `DATAGEN_MOCK_CSTORE`: When `true`, uses in-memory mock CStore/auth (`admin/admin`, `test_user/testtest`).
 - `DATAGEN_MOCK_INFERENCE_API`: When `true`, uses in-memory mock inference that returns random JSON records.
-- `DATAGEN_ACTIVE_POLL_SECONDS`: Poll interval while tasks are active (default `2`).
-- `DATAGEN_IDLE_POLL_SECONDS`: Poll interval when idle (default `10`).
+- `DATAGEN_JOB_POLL_SECONDS`: Worker poll interval for queued/running jobs (default `5`).
+- `DATAGEN_UPDATE_EVERY_K_REQUESTS`: Persist/update cadence during generation (default `5`).
+- `DATAGEN_MAX_CONCURRENT_JOBS_PER_INSTANCE`: Max jobs processed in parallel per instance (default `1`).
+- `DATAGEN_LOCAL_CACHE_DIR`: Local worker cache directory (default `/_local_cache/datagen`).
+- `DATAGEN_ACTIVE_POLL_SECONDS`: UI poll interval while tasks are active (default `10`).
+- `DATAGEN_IDLE_POLL_SECONDS`: UI poll interval when idle (default `30`).
 
 ## Current API Surface
 

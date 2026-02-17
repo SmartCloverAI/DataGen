@@ -110,7 +110,7 @@ DataGen is a **full-stack TypeScript web app + API** for generating synthetic da
 - `R1EN_HOST_ADDR` (must match one entry in `R1EN_CHAINSTORE_PEERS`)
 
 ### Worker behavior
-- `DATAGEN_JOB_POLL_SECONDS` (default 2)
+- `DATAGEN_JOB_POLL_SECONDS` (default 5)
 - `DATAGEN_UPDATE_EVERY_K_REQUESTS` (default 5)
 - `DATAGEN_MAX_CONCURRENT_JOBS_PER_INSTANCE` (default 1)
 - `DATAGEN_LOCAL_CACHE_DIR` (default `/_local_cache/datagen`)
@@ -129,7 +129,8 @@ DataGen is a **full-stack TypeScript web app + API** for generating synthetic da
 - `DATAGEN_LOG_R1FS_CALLS` — logs R1FS call start/success/error events
 - `RETRY_INFERENCE_ON_FAILURE` — retry one extra inference call on failure/parse errors
 - `NEXT_PUBLIC_SHOW_FAILURES` — show failure count in UI
-- `DATAGEN_ACTIVE_POLL_SECONDS` / `DATAGEN_IDLE_POLL_SECONDS` — UI polling intervals
+- `DATAGEN_MAX_EXTERNAL_API_CONFIGS` — max saved external API profiles per user (default 10)
+- `DATAGEN_ACTIVE_POLL_SECONDS` / `DATAGEN_IDLE_POLL_SECONDS` — UI polling intervals (defaults: 10 / 30)
 - `NEXT_PUBLIC_DATAGEN_UI_TEST_PRESET` — optional JSON string to auto-fill UI generation form fields for testing
 
 ---

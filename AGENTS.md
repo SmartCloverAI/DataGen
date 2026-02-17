@@ -277,4 +277,72 @@ If you choose npm instead, keep scripts equivalent.
 
 ---
 
+## 14) BUILD-CRITIC protocol (SOTA iterative development + evaluation, 2026 update)
+
+For all non-trivial implementation tasks (especially after `/metrics`), use a **BUILD-CRITIC** loop:
+
+### BUILD phase (small, testable increments)
+- Create a short task card with:
+  - goal
+  - constraints
+  - acceptance checks
+  - rollback plan
+- Break work into stepwise requirement turns (inspired by **SR-Eval**, 2025) instead of one large patch.
+- Produce the smallest coherent patch that can be validated end-to-end.
+
+### CRITIC phase (tool + model-assisted critique)
+- Run tool-interactive critique first (inspired by **CRITIC**, 2024):
+  - type checks
+  - lint
+  - targeted tests
+  - route-level contract checks
+  - security/safety checks (auth enforced, secret leaks, input bounds)
+- Add structured LLM critique on top of tool output:
+  - correctness
+  - edge cases
+  - maintainability
+  - failure handling
+  - data integrity in CStore
+- Use **selective critique** (inspired by **RefineCoder/ACR**, 2025): spend critique budget where confidence is low, tests fail, or risk is high.
+
+### ITERATE phase
+- Apply exactly the fixes justified by critique evidence.
+- Re-run the CRITIC phase.
+- Keep a compact reflection log (inspired by **Reflexion**, 2023):
+  - root cause
+  - patch applied
+  - prevention note for next iteration
+
+### Stop criteria (must be explicit)
+- All acceptance checks pass.
+- No auth regressions.
+- No persisted-data schema regressions.
+- No untriaged high-severity critic findings.
+
+### Evaluation policy (offline + live)
+- Always report:
+  - `pass@1` on deterministic tests
+  - regression count
+  - iteration count to green
+  - time-to-green
+  - cost/latency per successful task
+- Maintain two evaluation tracks:
+  - **Static benchmark track** (e.g., SWE-bench-style reproducible suites).
+  - **Fresh/live track** (inspired by **SWE-bench-Live**, 2025) to reduce contamination and overfitting to stale tasks.
+- Prefer contamination-aware evaluation design and periodically refresh holdout tasks.
+- When relevant, validate on repository-level, multi-file tasks, not only function-level tasks (aligned with recent SWE-agent benchmarks and SWE-Universe scaling results, 2026).
+
+### Recommended references for this protocol
+- Self-Refine (2023): https://arxiv.org/abs/2303.17651
+- Reflexion (2023): https://arxiv.org/abs/2303.11366
+- CRITIC (2024): https://arxiv.org/abs/2305.11738
+- RefineCoder / ACR (2025): https://arxiv.org/abs/2502.09183
+- Teaching LMs to Critique via RL / CTRL (2025): https://arxiv.org/abs/2502.03492
+- SR-Eval (2025): https://arxiv.org/abs/2509.18808
+- SWE-bench (2023/2024): https://arxiv.org/abs/2310.06770
+- SWE-bench-Live (2025): https://arxiv.org/abs/2505.23419
+- SWE-Universe (2026): https://arxiv.org/abs/2602.02361
+
+---
+
 If any assumption here conflicts with reality (package API differences, env var names, etc.), update this file and align the codebase accordingly.

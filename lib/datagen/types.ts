@@ -45,6 +45,7 @@ export type DataGenJobDetails = {
   instructions: string;
   schema: unknown;
   inference: {
+    useExternalApi?: boolean;
     profileId?: string;
     baseUrl: string;
     path: string;

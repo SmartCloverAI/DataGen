@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
     instructions: draft.instructions,
     schema: sanitized.schema,
     inference: {
+      useExternalApi,
       profileId: useExternalApi ? selectedProfile?.id : undefined,
       baseUrl: baseUrl ?? INFERENCE_BASE_URL,
       path: path ?? CREATE_CHAT_COMPLETION_PATH,

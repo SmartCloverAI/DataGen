@@ -31,6 +31,14 @@ let workerStarted = false;
 let workerBusy = false;
 let pollHandle: NodeJS.Timeout | null = null;
 
+function isExternalInference(details: DataGenJobDetails): boolean {
+  if (typeof details.inference.useExternalApi === "boolean") {
+    return details.inference.useExternalApi;
+  }
+  // Backward compatibility for legacy jobs created before useExternalApi existed.
+  return Boolean(details.inference.profileId);
+}
+
 function getCacheDir() {
   return readEnv("DATAGEN_LOCAL_CACHE_DIR") ?? DEFAULT_CACHE_DIR;
 }
@@ -178,10 +186,13 @@ async function runJobForPeer(jobId: string) {
     const selectedProfile =
       getProfileById(userSettings, details.inference.profileId) ??
       getActiveProfile(userSettings);
+    const useExternalApi = isExternalInference(details);
     const inferenceConfig = {
-      baseUrl: details.inference.baseUrl || INFERENCE_BASE_URL,
+      baseUrl: useExternalApi
+        ? details.inference.baseUrl || INFERENCE_BASE_URL
+        : INFERENCE_BASE_URL,
       path: details.inference.path,
-      apiKey: selectedProfile?.apiKey,
+      apiKey: useExternalApi ? selectedProfile?.apiKey : undefined,
       model: details.inference.model,
       parameters: details.inference.parameters,
     };

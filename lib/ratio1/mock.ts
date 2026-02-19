@@ -91,7 +91,7 @@ class MockR1fs {
     const cid = this.nextCid();
     let payload = Buffer.alloc(0);
     if (Buffer.isBuffer(file)) {
-      payload = file;
+      payload = Buffer.from(file);
     } else if (typeof file === "string") {
       payload = Buffer.from(file, "utf8");
     }

@@ -18,15 +18,15 @@ function cstoreAuthAdapter() {
   const cstore = getCStore();
   return {
     hget: (hkey: string, key: string) => cstore.hget({ hkey, key }),
-    hset: (hkey: string, key: string, value: string) =>
-      cstore.hset({ hkey, key, value }),
+    hset: async (hkey: string, key: string, value: string) => {
+      await cstore.hset({ hkey, key, value });
+    },
     hgetAll: (hkey: string) => cstore.hgetall({ hkey }),
   };
 }
 
 export function getAuthClient() {
   if (mockMode) {
-    // @ts-expect-error - mock implements subset of API
     return mockAuth as unknown as CStoreAuth;
   }
   if (!authInstance) {

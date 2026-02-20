@@ -181,35 +181,170 @@ function stripCodeFences(text: string): string {
   return withoutStart.slice(0, endIndex).trim();
 }
 
-function parseJsonContent(raw: string): unknown {
-  const withoutFences = stripCodeFences(raw);
-  const start = withoutFences.indexOf("{");
-  const end = withoutFences.lastIndexOf("}");
-  const candidate =
-    start !== -1 && end !== -1 && end > start
-      ? withoutFences.slice(start, end + 1)
-      : withoutFences;
-  const trimmed = candidate.trim();
+function normalizeJsonCandidate(input: string): string {
+  const trimmed = input.trim().replace(/^\uFEFF/, "");
   const noTrailingCommas = trimmed.replace(/,(\s*[}\]])/g, "$1");
   const quotedFractions = noTrailingCommas.replace(
     /:\s*([0-9]+\/[0-9]+[^,\}\]]*)/g,
     (_match, value) => `: "${value.trim()}"`,
   );
-  return parseWithRepair(quotedFractions);
+  return quotedFractions;
+}
+
+function closeDanglingString(input: string): string {
+  let inString = false;
+  let escape = false;
+  for (const char of input) {
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (char === "\\" && inString) {
+      escape = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+    }
+  }
+  let out = input.trim();
+  if (escape) out += "\\";
+  if (inString) out += '"';
+  return out;
 }
 
 function parseWithRepair(input: string): unknown {
+  const normalized = normalizeJsonCandidate(input);
   try {
-    return JSON.parse(input);
+    return JSON.parse(normalized);
   } catch {
-    // Try a lightweight structural repair: append missing closing brackets/braces.
-    const repaired = appendMissingClosers(input);
+    // Try lightweight structural repairs in sequence.
+    const repairedClosers = appendMissingClosers(normalized);
     try {
-      return JSON.parse(repaired);
-    } catch (error) {
-      throw new Error("Failed to parse inference response as JSON");
+      return JSON.parse(repairedClosers);
+    } catch {
+      const repairedString = closeDanglingString(repairedClosers);
+      try {
+        return JSON.parse(repairedString);
+      } catch {
+        throw new Error("Failed to parse inference response as JSON");
+      }
     }
   }
+}
+
+function maybeParseNestedJsonString(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    (trimmed.startsWith("[") && trimmed.endsWith("]"))
+  ) {
+    try {
+      return parseWithRepair(trimmed);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+}
+
+function extractBalancedJsonBlocks(input: string): string[] {
+  const blocks: string[] = [];
+  let inString = false;
+  let escape = false;
+  let stack: Array<"}" | "]"> = [];
+  let start = -1;
+
+  for (let i = 0; i < input.length; i += 1) {
+    const char = input[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (char === "\\") {
+      escape = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+
+    if ((char === "{" || char === "[") && stack.length === 0) {
+      start = i;
+      stack.push(char === "{" ? "}" : "]");
+      continue;
+    }
+    if (char === "{" || char === "[") {
+      stack.push(char === "{" ? "}" : "]");
+      continue;
+    }
+    if (char === "}" || char === "]") {
+      const top = stack[stack.length - 1];
+      if ((char === "}" && top === "}") || (char === "]" && top === "]")) {
+        stack.pop();
+        if (stack.length === 0 && start >= 0) {
+          blocks.push(input.slice(start, i + 1));
+          start = -1;
+        }
+      }
+    }
+  }
+
+  return blocks;
+}
+
+function collectJsonCandidates(raw: string): string[] {
+  const deduped = new Set<string>();
+  const push = (value: string | undefined) => {
+    if (!value) return;
+    const trimmed = value.trim();
+    if (trimmed.length === 0) return;
+    deduped.add(trimmed);
+  };
+
+  const withoutFences = stripCodeFences(raw);
+  push(raw);
+  push(withoutFences);
+
+  for (const block of extractBalancedJsonBlocks(withoutFences)) {
+    push(block);
+  }
+
+  const firstObject = withoutFences.indexOf("{");
+  const firstArray = withoutFences.indexOf("[");
+  const lastObject = withoutFences.lastIndexOf("}");
+  const lastArray = withoutFences.lastIndexOf("]");
+
+  if (firstObject !== -1) {
+    push(withoutFences.slice(firstObject));
+    if (lastObject !== -1 && lastObject > firstObject) {
+      push(withoutFences.slice(firstObject, lastObject + 1));
+    }
+  }
+  if (firstArray !== -1) {
+    push(withoutFences.slice(firstArray));
+    if (lastArray !== -1 && lastArray > firstArray) {
+      push(withoutFences.slice(firstArray, lastArray + 1));
+    }
+  }
+
+  return Array.from(deduped);
+}
+
+function parseJsonContent(raw: string): unknown {
+  const candidates = collectJsonCandidates(raw);
+  for (const candidate of candidates) {
+    try {
+      const parsed = parseWithRepair(candidate);
+      return maybeParseNestedJsonString(parsed);
+    } catch {
+      // Try next candidate.
+    }
+  }
+  throw new Error("Failed to parse inference response as JSON");
 }
 
 function appendMissingClosers(input: string): string {
@@ -234,10 +369,48 @@ function appendMissingClosers(input: string): string {
 
     if (char === "{") stack.push("}");
     else if (char === "[") stack.push("]");
-    else if ((char === "}" || char === "]") && stack.length > 0) stack.pop();
+    else if (char === "}" && stack[stack.length - 1] === "}") stack.pop();
+    else if (char === "]" && stack[stack.length - 1] === "]") stack.pop();
   }
 
   return stack.reduceRight((acc, closer) => acc + closer, input.trim());
+}
+
+function textFromPart(part: unknown): string | null {
+  if (typeof part === "string") return part;
+  if (!part || typeof part !== "object") return null;
+
+  const candidate = part as Record<string, unknown>;
+  if (typeof candidate.text === "string") return candidate.text;
+  if (
+    candidate.text &&
+    typeof candidate.text === "object" &&
+    typeof (candidate.text as Record<string, unknown>).value === "string"
+  ) {
+    return (candidate.text as Record<string, string>).value;
+  }
+  if (
+    candidate.content &&
+    typeof candidate.content === "object" &&
+    typeof (candidate.content as Record<string, unknown>).text === "string"
+  ) {
+    return (candidate.content as Record<string, string>).text;
+  }
+  return null;
+}
+
+function extractTextPayload(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    const fragments = value
+      .map((entry) => textFromPart(entry))
+      .filter((entry): entry is string => typeof entry === "string");
+    if (fragments.length > 0) {
+      return fragments.join("\n").trim();
+    }
+    return null;
+  }
+  return textFromPart(value);
 }
 
 type InferenceMessage = {
@@ -331,18 +504,18 @@ async function callInference(
           payload?.message?.content ??
           payload?.content ??
           payload;
-        if (typeof content === "string") {
-          output = parseJsonContent(content);
+        const contentText = extractTextPayload(content);
+        if (typeof contentText === "string" && contentText.trim().length > 0) {
+          output = parseJsonContent(contentText);
         } else if (content !== undefined) {
-          output = content;
+          output = maybeParseNestedJsonString(content);
         } else {
           // Last resort: try TEXT_RESPONSE if provided.
           const textResponse = data?.result?.TEXT_RESPONSE;
-          const textCandidate = Array.isArray(textResponse)
-            ? textResponse[0]
-            : textResponse;
-          if (typeof textCandidate === "string") {
-            output = parseJsonContent(textCandidate);
+          const textCandidate = Array.isArray(textResponse) ? textResponse[0] : textResponse;
+          const textPayload = extractTextPayload(textCandidate);
+          if (typeof textPayload === "string" && textPayload.trim().length > 0) {
+            output = parseJsonContent(textPayload);
           } else {
             throw new Error("Inference response missing content");
           }
@@ -434,6 +607,7 @@ export async function generateRecordSchema(
       ...config,
       parameters: {
         temperature: 0.2,
+        max_tokens: 1200,
         ...(config.parameters ?? {}),
         response_format: {
           type: "json_object",
